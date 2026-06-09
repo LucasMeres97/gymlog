@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GymLog – Evolua seu Personagem</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #111118;
+    --bg3: #18181f;
+    --bg4: #1e1e28;
+    --purple: #2d1b4e;
+    --purple2: #3d2560;
+    --yellow: #f0c020;
+    --yellow2: #ffd700;
+    --yellow-dim: rgba(240,192,32,0.15);
+    --yellow-glow: 0 0 12px rgba(240,192,32,0.5), 0 0 24px rgba(240,192,32,0.2);
+    --text: #e8e8f0;
+    --text-dim: #888899;
+    --text-muted: #555566;
+    --border: rgba(240,192,32,0.12);
+    --border2: rgba(255,255,255,0.06);
+    --card-shadow: 0 4px 24px rgba(0,0,0,0.5);
+    --radius: 12px;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* LAYOUT */
+  #app { display:flex; flex-direction:column; min-height:100vh; max-width:420px; margin:0 auto; position:relative; }
+  
+  /* TOP BAR */
+  .topbar {
+    position: sticky; top:0; z-index:100;
+    background: rgba(10,10,15,0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex; align-items:center; justify-content:space-between;
+  }
+  .topbar-logo {
+    font-family:'Rajdhani',sans-serif; font-size:22px; font-weight:700;
+    color:var(--yellow); letter-spacing:2px;
+    text-shadow: var(--yellow-glow);
+  }
+  .topbar-xp { display:flex; flex-direction:column; align-items:flex-end; gap:4px; }
+  .topbar-level {
+    font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:600;
+    color:var(--yellow); letter-spacing:1px;
+  }
+  .xp-bar-mini { width:80px; height:4px; background:var(--bg4); border-radius:2px; overflow:hidden; }
+  .xp-bar-fill { height:100%; background:linear-gradient(90deg,var(--yellow),var(--yellow2)); border-radius:2px; transition:width 1s ease; }
+
+  /* NAV */
+  .nav {
+    position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+    width:100%; max-width:420px; z-index:100;
+    background: rgba(10,10,15,0.97);
+    border-top: 1px solid var(--border);
+    display:flex;
+    backdrop-filter:blur(12px);
+  }
+  .nav-btn {
+    flex:1; padding:10px 4px 14px;
+    background:none; border:none; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    color:var(--text-muted); transition:color .2s;
+    font-family:'Inter',sans-serif;
+  }
+  .nav-btn.active { color:var(--yellow); }
+  .nav-btn svg { width:22px; height:22px; }
+  .nav-label { font-size:10px; font-weight:500; letter-spacing:.5px; }
+
+  /* PAGES */
+  .page { display:none; padding: 16px 16px 90px; }
+  .page.active { display:block; }
+
+  /* CARDS */
+  .card {
+    background:var(--bg3);
+    border:1px solid var(--border2);
+    border-radius:var(--radius);
+    padding:16px;
+    margin-bottom:12px;
+    box-shadow:var(--card-shadow);
+    position:relative; overflow:hidden;
+  }
+  .card::before {
+    content:''; position:absolute; inset:0;
+    background:linear-gradient(135deg,rgba(240,192,32,.03),transparent 60%);
+    pointer-events:none;
+  }
+  .card-gold {
+    border-color:var(--border);
+    background:linear-gradient(135deg,var(--bg3),var(--purple));
+  }
+  .card-title {
+    font-family:'Rajdhani',sans-serif; font-size:11px; font-weight:600;
+    color:var(--text-muted); letter-spacing:2px; text-transform:uppercase;
+    margin-bottom:8px;
+  }
+
+  /* SECTION HEADERS */
+  .section-header {
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:12px; margin-top:8px;
+  }
+  .section-title {
+    font-family:'Rajdhani',sans-serif; font-size:18px; font-weight:700;
+    color:var(--text); letter-spacing:1px;
+  }
+  .section-badge {
+    font-size:11px; color:var(--yellow); background:var(--yellow-dim);
+    border:1px solid var(--border); border-radius:6px;
+    padding:2px 8px; font-weight:600;
+  }
+
+  /* BUTTON */
+  .btn {
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    padding:12px 20px; border-radius:10px; border:none; cursor:pointer;
+    font-family:'Rajdhani',sans-serif; font-size:15px; font-weight:700;
+    letter-spacing:1px; transition:all .2s; text-transform:uppercase;
+  }
+  .btn-primary {
+    background:var(--yellow); color:#0a0a0f;
+    box-shadow:var(--yellow-glow);
+  }
+  .btn-primary:hover { background:var(--yellow2); transform:translateY(-1px); box-shadow: 0 0 20px rgba(240,192,32,.7); }
+  .btn-secondary {
+    background:var(--bg4); color:var(--text);
+    border:1px solid var(--border2);
+  }
+  .btn-full { width:100%; }
+
+  /* RATBRO SVG */
+  .ratbro-wrap { display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .ratbro-msg {
+    font-family:'Rajdhani',sans-serif; font-size:15px; font-weight:600;
+    color:var(--yellow); text-align:center; letter-spacing:.5px;
+    text-shadow: 0 0 8px rgba(240,192,32,.4);
+    min-height:24px;
+  }
+
+  /* XP / LEVEL */
+  .level-big {
+    font-family:'Rajdhani',sans-serif; font-size:48px; font-weight:700;
+    color:var(--yellow); line-height:1; text-shadow:var(--yellow-glow);
+  }
+  .level-title {
+    font-family:'Rajdhani',sans-serif; font-size:16px; font-weight:600;
+    color:var(--text-dim); letter-spacing:2px; text-transform:uppercase;
+    margin-top:4px;
+  }
+  .xp-bar-wrap { margin-top:12px; }
+  .xp-bar-label { display:flex; justify-content:space-between; font-size:11px; color:var(--text-muted); margin-bottom:4px; }
+  .xp-bar { height:8px; background:var(--bg4); border-radius:4px; overflow:hidden; }
+  .xp-fill { height:100%; background:linear-gradient(90deg,var(--yellow),var(--yellow2)); border-radius:4px; transition:width 1.2s cubic-bezier(.4,0,.2,1); }
+
+  /* STREAK */
+  .streak-num {
+    font-family:'Rajdhani',sans-serif; font-size:42px; font-weight:700;
+    color:var(--yellow); text-shadow:var(--yellow-glow);
+  }
+  .streak-label { font-size:13px; color:var(--text-dim); margin-top:2px; }
+  .streak-fire { font-size:28px; }
+
+  /* STATS GRID */
+  .stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .stat-card {
+    background:var(--bg4); border-radius:10px; padding:14px;
+    border:1px solid var(--border2);
+  }
+  .stat-val {
+    font-family:'Rajdhani',sans-serif; font-size:24px; font-weight:700;
+    color:var(--yellow);
+  }
+  .stat-label { font-size:11px; color:var(--text-muted); margin-top:2px; }
+
+  /* CALENDAR GRID */
+  .cal-grid {
+    display:grid; grid-template-columns: repeat(7,1fr); gap:4px;
+    margin-top:8px;
+  }
+  .cal-day {
+    aspect-ratio:1; border-radius:3px; background:var(--bg4);
+    cursor:pointer; transition:all .15s;
+  }
+  .cal-day.level-1 { background:rgba(240,192,32,.25); }
+  .cal-day.level-2 { background:rgba(240,192,32,.5); }
+  .cal-day.level-3 { background:rgba(240,192,32,.75); }
+  .cal-day.level-4 { background:var(--yellow); box-shadow:0 0 6px rgba(240,192,32,.5); }
+  .cal-day.today { box-shadow:0 0 0 2px var(--yellow); }
+  .cal-labels { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-bottom:4px; }
+  .cal-label { font-size:9px; color:var(--text-muted); text-align:center; font-weight:600; }
+  .cal-month-header {
+    font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:600;
+    color:var(--text-dim); letter-spacing:1px; margin-bottom:4px;
+  }
+  .cal-legend { display:flex; align-items:center; gap:6px; margin-top:8px; font-size:11px; color:var(--text-muted); }
+  .cal-legend-square { width:11px; height:11px; border-radius:2px; }
+
+  /* RECORDS */
+  .record-item {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 0; border-bottom:1px solid var(--border2);
+  }
+  .record-item:last-child { border-bottom:none; }
+  .record-name { font-size:14px; font-weight:500; }
+  .record-kg {
+    font-family:'Rajdhani',sans-serif; font-size:20px; font-weight:700;
+    color:var(--yellow);
+  }
+  .record-date { font-size:11px; color:var(--text-muted); margin-top:2px; text-align:right; }
+  .record-new-badge {
+    font-size:10px; background:var(--yellow); color:#0a0a0f;
+    border-radius:4px; padding:1px 6px; font-weight:700; margin-left:6px;
+    animation:pulse-badge 1.5s infinite;
+  }
+  @keyframes pulse-badge { 0%,100%{opacity:1} 50%{opacity:.6} }
+
+  /* ACHIEVEMENTS */
+  .ach-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .ach-card {
+    background:var(--bg4); border-radius:10px; padding:14px;
+    border:1px solid var(--border2); position:relative;
+    transition:all .2s;
+  }
+  .ach-card.unlocked {
+    border-color:var(--border);
+    background:linear-gradient(135deg,var(--bg4),var(--purple));
+    box-shadow:0 0 12px rgba(240,192,32,.1);
+  }
+  .ach-card.locked { opacity:.5; }
+  .ach-icon { font-size:28px; margin-bottom:8px; }
+  .ach-name { font-family:'Rajdhani',sans-serif; font-size:14px; font-weight:700; color:var(--text); }
+  .ach-desc { font-size:11px; color:var(--text-muted); margin-top:4px; line-height:1.4; }
+  .ach-date { font-size:10px; color:var(--yellow); margin-top:6px; }
+  .ach-prog { margin-top:8px; }
+  .ach-prog-bar { height:4px; background:var(--bg3); border-radius:2px; overflow:hidden; }
+  .ach-prog-fill { height:100%; background:linear-gradient(90deg,var(--yellow),var(--yellow2)); border-radius:2px; }
+  .ach-prog-label { font-size:10px; color:var(--text-muted); margin-top:3px; }
+  .ach-cat-title {
+    font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:700;
+    color:var(--text-dim); letter-spacing:2px; text-transform:uppercase;
+    margin:14px 0 8px; display:flex; align-items:center; gap:8px;
+  }
+  .ach-cat-title::after { content:''; flex:1; height:1px; background:var(--border2); }
+
+  /* FORM */
+  .form-group { margin-bottom:14px; }
+  .form-label { font-size:12px; color:var(--text-muted); font-weight:500; margin-bottom:6px; display:block; letter-spacing:.5px; }
+  .form-input {
+    width:100%; padding:12px 14px; background:var(--bg4); border:1px solid var(--border2);
+    border-radius:10px; color:var(--text); font-size:14px; font-family:'Inter',sans-serif;
+    outline:none; transition:border-color .2s;
+  }
+  .form-input:focus { border-color:var(--yellow); }
+  .form-input::placeholder { color:var(--text-muted); }
+  select.form-input { cursor:pointer; }
+  option { background:var(--bg3); }
+
+  /* WORKOUT LOG */
+  .workout-item {
+    display:flex; align-items:flex-start; gap:12px;
+    padding:12px 0; border-bottom:1px solid var(--border2);
+  }
+  .workout-item:last-child { border-bottom:none; }
+  .workout-icon {
+    width:40px; height:40px; border-radius:10px; background:var(--purple);
+    display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;
+  }
+  .workout-info { flex:1; }
+  .workout-name { font-size:14px; font-weight:600; }
+  .workout-meta { font-size:12px; color:var(--text-muted); margin-top:2px; }
+  .workout-xp { font-size:11px; color:var(--yellow); font-weight:600; margin-top:4px; }
+
+  /* TOAST */
+  .toast {
+    position:fixed; top:70px; left:50%; transform:translateX(-50%) translateY(-20px);
+    background:var(--bg3); border:1px solid var(--yellow);
+    border-radius:12px; padding:12px 20px; z-index:999;
+    display:flex; align-items:center; gap:10px;
+    box-shadow:var(--yellow-glow), var(--card-shadow);
+    opacity:0; pointer-events:none; transition:all .3s;
+    white-space:nowrap;
+    max-width:340px;
+  }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  .toast-icon { font-size:20px; }
+  .toast-text { font-family:'Rajdhani',sans-serif; font-size:15px; font-weight:600; color:var(--yellow); }
+
+  /* DIVIDER */
+  .divider { height:1px; background:var(--border2); margin:16px 0; }
+
+  /* RATBRO SVG DRAWINGS */
+  .ratbro-svg { width:120px; height:120px; }
+  .ratbro-svg-sm { width:60px; height:60px; }
+
+  /* PROGRESS RING */
+  .prog-ring { transform:rotate(-90deg); }
+  .prog-ring-bg { fill:none; stroke:var(--bg4); stroke-width:5; }
+  .prog-ring-fill { fill:none; stroke:var(--yellow); stroke-width:5; stroke-linecap:round; transition:stroke-dashoffset 1.2s ease; }
+
+  /* NEXT WORKOUT */
+  .next-workout {
+    display:flex; align-items:center; gap:12px;
+  }
+  .next-day {
+    width:48px; height:48px; border-radius:10px;
+    background:var(--purple); display:flex; flex-direction:column; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  .next-day-num { font-family:'Rajdhani',sans-serif; font-size:22px; font-weight:700; color:var(--yellow); line-height:1; }
+  .next-day-month { font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; }
+
+  /* TABS inside a page */
+  .page-tabs { display:flex; gap:4px; margin-bottom:14px; }
+  .page-tab {
+    flex:1; padding:8px 4px; background:var(--bg4); border:1px solid var(--border2);
+    border-radius:8px; cursor:pointer; color:var(--text-muted);
+    font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:600; letter-spacing:.5px;
+    text-align:center; transition:all .2s; border:none;
+  }
+  .page-tab.active { background:var(--yellow-dim); color:var(--yellow); border:1px solid var(--border); }
+
+  /* MESSAGE CARD */
+  .msg-card {
+    background:linear-gradient(135deg,var(--purple),var(--bg3));
+    border:1px solid var(--border); border-radius:var(--radius);
+    padding:16px; margin-bottom:12px;
+    display:flex; align-items:center; gap:12px;
+  }
+  .msg-text { font-family:'Rajdhani',sans-serif; font-size:16px; font-weight:600; color:var(--yellow); line-height:1.4; }
+
+  /* ANIMATIONS */
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes glow-pulse { 0%,100%{text-shadow:var(--yellow-glow)} 50%{text-shadow: 0 0 20px rgba(240,192,32,.9), 0 0 40px rgba(240,192,32,.4)} }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+  @keyframes record-pop { 0%{transform:scale(1)} 50%{transform:scale(1.15)} 100%{transform:scale(1)} }
+
+  .anim-fadein { animation:fadeIn .4s ease both; }
+  .ratbro-float { animation:float 3s ease-in-out infinite; }
+  .glow-pulse { animation:glow-pulse 2s ease-in-out infinite; }
+
+  /* Unlock overlay */
+  #unlock-overlay {
+    position:fixed; inset:0; z-index:200;
+    background:rgba(0,0,0,.85);
+    display:flex; align-items:center; justify-content:center;
+    opacity:0; pointer-events:none; transition:opacity .3s;
+  }
+  #unlock-overlay.show { opacity:1; pointer-events:all; }
+  .unlock-box {
+    background:var(--bg3); border:2px solid var(--yellow);
+    border-radius:20px; padding:32px 24px; text-align:center;
+    box-shadow:var(--yellow-glow), 0 0 80px rgba(240,192,32,.15);
+    max-width:300px; width:90%;
+    animation:record-pop .5s ease;
+  }
+  .unlock-icon { font-size:56px; margin-bottom:8px; }
+  .unlock-title { font-family:'Rajdhani',sans-serif; font-size:22px; font-weight:700; color:var(--yellow); margin-bottom:4px; }
+  .unlock-sub { font-size:14px; color:var(--text-dim); }
+  .unlock-xp { font-family:'Rajdhani',sans-serif; font-size:18px; color:var(--yellow2); margin-top:8px; }
+
+  /* empty state */
+  .empty-state { text-align:center; padding:32px 16px; }
+  .empty-icon { font-size:40px; margin-bottom:12px; }
+  .empty-text { font-family:'Rajdhani',sans-serif; font-size:16px; color:var(--text-muted); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-logo">GYMLOG</div>
+    <div class="topbar-xp">
+      <div class="topbar-level" id="tb-level">Nível 1 · Iniciante</div>
+      <div class="xp-bar-mini"><div class="xp-bar-fill" id="tb-xp-fill" style="width:5%"></div></div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast">
+    <span class="toast-icon" id="toast-icon">⚡</span>
+    <span class="toast-text" id="toast-text">+50 XP</span>
+  </div>
+
+  <!-- UNLOCK OVERLAY -->
+  <div id="unlock-overlay" onclick="this.classList.remove('show')">
+    <div class="unlock-box">
+      <div class="unlock-icon" id="unlock-icon">🏆</div>
+      <div class="unlock-title" id="unlock-title">Conquista!</div>
+      <div class="unlock-sub" id="unlock-sub">Você desbloqueou uma conquista!</div>
+      <div class="unlock-xp" id="unlock-xp">+100 XP</div>
+      <button class="btn btn-primary" style="margin-top:16px;width:100%" onclick="document.getElementById('unlock-overlay').classList.remove('show')">CONTINUAR</button>
+    </div>
+  </div>
+
+  <!-- PAGE: HOME -->
+  <div class="page active anim-fadein" id="page-home">
+
+    <!-- Ratbro + message -->
+    <div class="msg-card" style="margin-top:4px">
+      <div id="ratbro-home" class="ratbro-float" style="flex-shrink:0"></div>
+      <div class="msg-text" id="ratbro-msg">Mais forte que ontem.</div>
+    </div>
+
+    <!-- Level card -->
+    <div class="card card-gold">
+      <div class="card-title">Sua Progressão</div>
+      <div style="display:flex;align-items:flex-start;gap:16px">
+        <div>
+          <div class="level-big glow-pulse" id="home-level">1</div>
+          <div class="level-title" id="home-title">INICIANTE</div>
+        </div>
+        <div style="flex:1; margin-top:8px">
+          <div class="xp-bar-wrap">
+            <div class="xp-bar-label">
+              <span id="home-xp-cur">0 XP</span>
+              <span id="home-xp-next">100 XP</span>
+            </div>
+            <div class="xp-bar"><div class="xp-fill" id="home-xp-fill" style="width:0%"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats row -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="streak-fire">🔥</div>
+        <div class="stat-val" id="home-streak">0</div>
+        <div class="stat-label">Dias seguidos</div>
+      </div>
+      <div class="stat-card">
+        <div style="font-size:20px">💪</div>
+        <div class="stat-val" id="home-total">0</div>
+        <div class="stat-label">Treinos totais</div>
+      </div>
+    </div>
+
+    <!-- Próximo treino -->
+    <div class="card" id="next-workout-card">
+      <div class="card-title">Próximo Treino</div>
+      <div class="next-workout" id="next-workout-content">
+        <div class="next-day">
+          <div class="next-day-num" id="next-day-num">--</div>
+          <div class="next-day-month" id="next-day-month">---</div>
+        </div>
+        <div>
+          <div style="font-size:15px;font-weight:600" id="next-workout-name">Nenhum planejado</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:2px" id="next-workout-type"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Último recorde -->
+    <div class="card" id="last-record-card" style="display:none">
+      <div class="card-title">Último Recorde 🏅</div>
+      <div id="last-record-content"></div>
+    </div>
+
+    <!-- Última conquista -->
+    <div class="card" id="last-ach-card" style="display:none">
+      <div class="card-title">Última Conquista</div>
+      <div id="last-ach-content"></div>
+    </div>
+
+    <button class="btn btn-primary btn-full" onclick="goToPage('log')" style="margin-bottom:8px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      REGISTRAR TREINO
+    </button>
+  </div>
+
+  <!-- PAGE: LOG TREINO -->
+  <div class="page" id="page-log">
+    <div class="section-header">
+      <div class="section-title">Registrar Treino</div>
+    </div>
+
+    <div class="card">
+      <div class="form-group">
+        <label class="form-label">Tipo de treino</label>
+        <select class="form-input" id="log-type">
+          <option value="">Selecione...</option>
+          <option value="Peito">🏋️ Peito</option>
+          <option value="Costas">🔙 Costas</option>
+          <option value="Pernas">🦵 Pernas</option>
+          <option value="Ombros">💪 Ombros</option>
+          <option value="Bíceps">💪 Bíceps</option>
+          <option value="Tríceps">💪 Tríceps</option>
+          <option value="Full Body">⚡ Full Body</option>
+          <option value="Cardio">🏃 Cardio</option>
+          <option value="Push">📤 Push</option>
+          <option value="Pull">📥 Pull</option>
+          <option value="Legs">🦵 Legs</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Duração (minutos)</label>
+        <input class="form-input" type="number" id="log-duration" placeholder="60" min="1" max="300">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Peso corporal (kg)</label>
+        <input class="form-input" type="number" id="log-weight" placeholder="80.0" step="0.1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Anotações</label>
+        <input class="form-input" type="text" id="log-notes" placeholder="Como foi o treino?">
+      </div>
+      <button class="btn btn-primary btn-full" onclick="logWorkout()">⚡ SALVAR TREINO +50 XP</button>
+    </div>
+
+    <!-- Recordes rápidos -->
+    <div class="section-header" style="margin-top:8px">
+      <div class="section-title">Registrar Recorde</div>
+      <div class="section-badge">PR</div>
+    </div>
+    <div class="card">
+      <div class="form-group">
+        <label class="form-label">Exercício</label>
+        <select class="form-input" id="rec-exercise">
+          <option value="Supino Reto">Supino Reto</option>
+          <option value="Agachamento">Agachamento</option>
+          <option value="Levantamento Terra">Levantamento Terra</option>
+          <option value="Rosca Direta">Rosca Direta</option>
+          <option value="Desenvolvimento Militar">Desenvolvimento Militar</option>
+          <option value="Remada">Remada</option>
+          <option value="Leg Press">Leg Press</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Carga (kg)</label>
+        <input class="form-input" type="number" id="rec-kg" placeholder="100" step="0.5">
+      </div>
+      <button class="btn btn-secondary btn-full" onclick="saveRecord()">🏅 SALVAR RECORDE</button>
+    </div>
+
+    <!-- Histórico -->
+    <div class="section-header" style="margin-top:8px">
+      <div class="section-title">Histórico</div>
+      <div class="section-badge" id="hist-count">0</div>
+    </div>
+    <div class="card" id="workout-history">
+      <div class="empty-state">
+        <div class="empty-icon">📋</div>
+        <div class="empty-text">Sem treinos ainda.<br>Registre seu primeiro treino!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: CALENDÁRIO -->
+  <div class="page" id="page-cal">
+    <div class="section-header">
+      <div class="section-title">Consistência</div>
+      <div class="section-badge" id="cal-total-days">0 dias</div>
+    </div>
+
+    <!-- GitHub-style grid -->
+    <div class="card">
+      <div id="cal-months"></div>
+      <div class="cal-legend">
+        <span>Menos</span>
+        <div class="cal-legend-square" style="background:var(--bg4)"></div>
+        <div class="cal-legend-square" style="background:rgba(240,192,32,.25)"></div>
+        <div class="cal-legend-square" style="background:rgba(240,192,32,.5)"></div>
+        <div class="cal-legend-square" style="background:rgba(240,192,32,.75)"></div>
+        <div class="cal-legend-square" style="background:var(--yellow)"></div>
+        <span>Mais</span>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-val" id="cal-streak">0</div>
+        <div class="stat-label">Sequência atual</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="cal-best">0</div>
+        <div class="stat-label">Melhor sequência</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="cal-month-count">0</div>
+        <div class="stat-label">Este mês</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="cal-total-count">0</div>
+        <div class="stat-label">Total geral</div>
+      </div>
+    </div>
+
+    <!-- Recordes -->
+    <div class="section-header" style="margin-top:8px">
+      <div class="section-title">Recordes Pessoais</div>
+      <div class="section-badge">PR</div>
+    </div>
+    <div class="card" id="records-list">
+      <div class="empty-state">
+        <div class="empty-icon">🏅</div>
+        <div class="empty-text">Nenhum recorde ainda.<br>Registre sua primeira marca!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: CONQUISTAS -->
+  <div class="page" id="page-ach">
+    <div class="section-header">
+      <div class="section-title">Conquistas</div>
+      <div class="section-badge" id="ach-count">0/16</div>
+    </div>
+    <div id="achievements-list"></div>
+  </div>
+
+  <!-- PAGE: PERFIL -->
+  <div class="page" id="page-profile">
+    <div class="section-header">
+      <div class="section-title">Perfil</div>
+    </div>
+
+    <!-- Ratbro evoluindo -->
+    <div class="card card-gold" style="text-align:center">
+      <div class="card-title" style="text-align:center">Seu Ratbro</div>
+      <div class="ratbro-wrap">
+        <div id="ratbro-profile" class="ratbro-float" style="margin:0 auto"></div>
+        <div id="ratbro-evo-name" style="font-family:Rajdhani,sans-serif;font-size:16px;font-weight:700;color:var(--yellow)">Ratbro Iniciante</div>
+        <div id="ratbro-evo-next" style="font-size:12px;color:var(--text-muted)"></div>
+      </div>
+    </div>
+
+    <div class="card card-gold">
+      <div class="card-title">Nível & XP</div>
+      <div style="display:flex;align-items:center;gap:20px">
+        <div class="level-big glow-pulse" id="prof-level">1</div>
+        <div style="flex:1">
+          <div class="level-title" id="prof-title">INICIANTE</div>
+          <div class="xp-bar-wrap" style="margin-top:8px">
+            <div class="xp-bar-label">
+              <span id="prof-xp-cur">0 XP</span>
+              <span id="prof-xp-next">100 XP</span>
+            </div>
+            <div class="xp-bar"><div class="xp-fill" id="prof-xp-fill" style="width:0%"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-val" id="prof-total-xp">0</div>
+        <div class="stat-label">XP Total</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="prof-ach">0</div>
+        <div class="stat-label">Conquistas</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="prof-workouts">0</div>
+        <div class="stat-label">Treinos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="prof-streak">0</div>
+        <div class="stat-label">Sequência</div>
+      </div>
+    </div>
+
+    <button class="btn btn-secondary btn-full" onclick="if(confirm('Resetar todos os dados?'))resetData()" style="margin-top:8px">🗑️ Resetar Dados</button>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="nav">
+    <button class="nav-btn active" id="nav-home" onclick="goToPage('home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+      <span class="nav-label">Início</span>
+    </button>
+    <button class="nav-btn" id="nav-log" onclick="goToPage('log')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <span class="nav-label">Treinar</span>
+    </button>
+    <button class="nav-btn" id="nav-cal" onclick="goToPage('cal')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span class="nav-label">Calendário</span>
+    </button>
+    <button class="nav-btn" id="nav-ach" onclick="goToPage('ach')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+      <span class="nav-label">Conquistas</span>
+    </button>
+    <button class="nav-btn" id="nav-profile" onclick="goToPage('profile')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span class="nav-label">Perfil</span>
+    </button>
+  </nav>
+</div>
+
+<script>
+// ============================================================
+// DATA STORE
+// ============================================================
+let state = {
+  xp: 0, level: 1,
+  workouts: [], // {id, date, type, duration, weight, notes}
+  records: {}, // {exercise: {kg, date}}
+  bodyWeights: [], // {date, kg}
+  achievements: {}, // {id: {unlocked, date, progress}}
+};
+
+const LEVELS = [
+  {level:1,title:'Iniciante',xpNeeded:0},
+  {level:2,title:'Iniciante+',xpNeeded:100},
+  {level:3,title:'Aprendiz',xpNeeded:250},
+  {level:4,title:'Aprendiz+',xpNeeded:450},
+  {level:5,title:'Aprendiz',xpNeeded:700},
+  {level:6,title:'Guerreiro',xpNeeded:1000},
+  {level:10,title:'Guerreiro',xpNeeded:2000},
+  {level:20,title:'Gladiador',xpNeeded:5000},
+  {level:30,title:'Titã',xpNeeded:10000},
+  {level:50,title:'Lenda',xpNeeded:25000},
+  {level:100,title:'Titânico',xpNeeded:100000},
+];
+
+const ACHIEVEMENTS = [
+  // Consistência
+  {id:'first_workout', cat:'Consistência', icon:'🌟', name:'Primeiro Passo', desc:'Registre seu primeiro treino', xp:50, target:1, getValue:()=>state.workouts.length},
+  {id:'streak7', cat:'Consistência', icon:'🔥', name:'Semana de Fogo', desc:'7 dias seguidos de treino', xp:150, target:7, getValue:()=>calcStreak()},
+  {id:'streak30', cat:'Consistência', icon:'💎', name:'Mês Perfeito', desc:'30 dias seguidos de treino', xp:500, target:30, getValue:()=>calcStreak()},
+  {id:'streak100', cat:'Consistência', icon:'👑', name:'Centenário', desc:'100 dias seguidos de treino', xp:2000, target:100, getValue:()=>calcStreak()},
+  // Volume
+  {id:'w10', cat:'Volume', icon:'💪', name:'Dez Treinos', desc:'Complete 10 treinos', xp:100, target:10, getValue:()=>state.workouts.length},
+  {id:'w50', cat:'Volume', icon:'🏋️', name:'Cinquenta Treinos', desc:'Complete 50 treinos', xp:300, target:50, getValue:()=>state.workouts.length},
+  {id:'w100', cat:'Volume', icon:'⚡', name:'Centurião', desc:'Complete 100 treinos', xp:800, target:100, getValue:()=>state.workouts.length},
+  {id:'w500', cat:'Volume', icon:'🌌', name:'Lendário', desc:'Complete 500 treinos', xp:5000, target:500, getValue:()=>state.workouts.length},
+  // Peso
+  {id:'first_weight', cat:'Peso', icon:'⚖️', name:'Primeira Pesagem', desc:'Registre seu peso corporal', xp:30, target:1, getValue:()=>state.bodyWeights.length},
+  {id:'lose5', cat:'Peso', icon:'📉', name:'Menos 5kg', desc:'Perca 5kg em relação ao peso inicial', xp:200, target:5, getValue:()=>getWeightLost()},
+  {id:'lose10', cat:'Peso', icon:'🏆', name:'Menos 10kg', desc:'Perca 10kg em relação ao peso inicial', xp:500, target:10, getValue:()=>getWeightLost()},
+  {id:'gain5', cat:'Peso', icon:'📈', name:'Ganho de Massa', desc:'Ganhe 5kg de peso corporal', xp:200, target:5, getValue:()=>getWeightGained()},
+  // Recordes
+  {id:'first_record', cat:'Recordes', icon:'🥇', name:'Primeiro Recorde', desc:'Registre seu primeiro PR', xp:50, target:1, getValue:()=>Object.keys(state.records).length},
+  {id:'bench100', cat:'Recordes', icon:'💛', name:'Century Bench', desc:'Supino acima de 100kg', xp:300, target:100, getValue:()=>(state.records['Supino Reto']?.kg||0)},
+  {id:'squat100', cat:'Recordes', icon:'🦵', name:'Century Squat', desc:'Agachamento acima de 100kg', xp:300, target:100, getValue:()=>(state.records['Agachamento']?.kg||0)},
+  {id:'dead140', cat:'Recordes', icon:'⚡', name:'Terra 140', desc:'Levantamento terra acima de 140kg', xp:400, target:140, getValue:()=>(state.records['Levantamento Terra']?.kg||0)},
+];
+
+const RATBRO_MSGS = {
+  default:['Mais forte que ontem.','A disciplina venceu a motivação.','Você está evoluindo.','Seu corpo não vai crescer sozinho.','Foco. Disciplina. Resultado.'],
+  few:['Você treinou pouco esta semana. Ratbro não aprova.','Cadê o esforço? Ratbro está esperando.'],
+  streak:['Você está em chamas! Continue!','Sequência ativa. Não quebre agora.'],
+  record:['Novo recorde desbloqueado. ISSO!','Você superou seus limites hoje.'],
+  close:['Falta pouco para seu próximo objetivo.','Você está quase lá, não para agora.'],
+};
+
+// ============================================================
+// RATBRO SVG GENERATIONS
+// ============================================================
+function ratbroSVG(level=1, size=120) {
+  // Progressive: 1=thin, 10=athletic, 25=muscular, 50=legendary, 100=titanic
+  const armW = level>=50 ? 22 : level>=25 ? 16 : level>=10 ? 12 : 8;
+  const bodyW = level>=50 ? 52 : level>=25 ? 44 : level>=10 ? 38 : 30;
+  const bodyH = level>=50 ? 44 : level>=25 ? 38 : level>=10 ? 34 : 28;
+  const crownColor = level>=100 ? '#ffd700' : level>=50 ? '#f0c020' : 'none';
+  const glowStr = level>=25 ? '0 0 8px #f0c020' : 'none';
+  const eyeGlow = level>=10 ? '#f0c020' : '#888';
+  const furColor = level>=50 ? '#555' : '#888';
+  const bodyColor = level>=25 ? '#444' : '#666';
+  
+  const cx = size/2, baseY = size*0.82;
+  const headR = size*0.16;
+  const bodyY = baseY - bodyH/2;
+  
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <filter id="glow-rat"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    </defs>
+    ${level>=50?`<ellipse cx="${cx}" cy="${cx}" rx="${cx*0.9}" ry="${cx*0.9}" fill="rgba(240,192,32,.07)"/>`:''}
+    <!-- tail -->
+    <path d="M${cx+bodyW/2-4} ${bodyY+bodyH*0.7} Q${cx+bodyW/2+16} ${bodyY+bodyH+12} ${cx+bodyW/2+10} ${baseY+10}" stroke="${furColor}" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <!-- legs -->
+    <rect x="${cx-bodyW/4-8}" y="${baseY-12}" width="14" height="22" rx="6" fill="${bodyColor}"/>
+    <rect x="${cx+bodyW/4-6}" y="${baseY-12}" width="14" height="22" rx="6" fill="${bodyColor}"/>
+    <!-- feet -->
+    <ellipse cx="${cx-bodyW/4}" cy="${baseY+10}" rx="10" ry="5" fill="${furColor}"/>
+    <ellipse cx="${cx+bodyW/4+1}" cy="${baseY+10}" rx="10" ry="5" fill="${furColor}"/>
+    <!-- body -->
+    <ellipse cx="${cx}" cy="${bodyY+bodyH/2}" rx="${bodyW/2}" ry="${bodyH/2}" fill="${bodyColor}" ${level>=25?'filter="url(#glow-rat)"':''}/>
+    <!-- abs (only muscular+) -->
+    ${level>=25?`<ellipse cx="${cx}" cy="${bodyY+bodyH*0.3}" rx="${bodyW/4}" ry="${bodyH*0.12}" fill="rgba(0,0,0,.3)"/>
+    <ellipse cx="${cx}" cy="${bodyY+bodyH*0.55}" rx="${bodyW/4}" ry="${bodyH*0.12}" fill="rgba(0,0,0,.3)"/>`:''}
+    <!-- arms -->
+    <ellipse cx="${cx-bodyW/2-armW/2+4}" cy="${bodyY+bodyH*0.35}" rx="${armW/2}" ry="${armW*0.8}" fill="${bodyColor}" transform="rotate(-20,${cx-bodyW/2},${bodyY+bodyH*0.35})"/>
+    <ellipse cx="${cx+bodyW/2+armW/2-4}" cy="${bodyY+bodyH*0.35}" rx="${armW/2}" ry="${armW*0.8}" fill="${bodyColor}" transform="rotate(20,${cx+bodyW/2},${bodyY+bodyH*0.35})"/>
+    <!-- fists -->
+    <circle cx="${cx-bodyW/2-armW+6}" cy="${bodyY+bodyH*0.55}" r="${armW*0.6}" fill="${furColor}"/>
+    <circle cx="${cx+bodyW/2+armW-6}" cy="${bodyY+bodyH*0.55}" r="${armW*0.6}" fill="${furColor}"/>
+    <!-- neck -->
+    <rect x="${cx-8}" y="${bodyY-10}" width="16" height="14" rx="4" fill="${bodyColor}"/>
+    <!-- head -->
+    <ellipse cx="${cx}" cy="${bodyY-headR}" rx="${headR*1.15}" ry="${headR}" fill="${furColor}"/>
+    <!-- ears -->
+    <ellipse cx="${cx-headR*0.85}" cy="${bodyY-headR*1.8}" rx="${headR*0.45}" ry="${headR*0.6}" fill="${furColor}"/>
+    <ellipse cx="${cx+headR*0.85}" cy="${bodyY-headR*1.8}" rx="${headR*0.45}" ry="${headR*0.6}" fill="${furColor}"/>
+    <ellipse cx="${cx-headR*0.85}" cy="${bodyY-headR*1.8}" rx="${headR*0.25}" ry="${headR*0.38}" fill="rgba(255,150,150,.7)"/>
+    <ellipse cx="${cx+headR*0.85}" cy="${bodyY-headR*1.8}" rx="${headR*0.25}" ry="${headR*0.38}" fill="rgba(255,150,150,.7)"/>
+    <!-- eyes -->
+    <circle cx="${cx-headR*0.38}" cy="${bodyY-headR*1.1}" r="${headR*0.25}" fill="${eyeGlow}" ${level>=10?'filter="url(#glow-rat)"':''}/>
+    <circle cx="${cx+headR*0.38}" cy="${bodyY-headR*1.1}" r="${headR*0.25}" fill="${eyeGlow}" ${level>=10?'filter="url(#glow-rat)"':''}/>
+    <circle cx="${cx-headR*0.38+1}" cy="${bodyY-headR*1.12}" r="${headR*0.1}" fill="#000"/>
+    <circle cx="${cx+headR*0.38+1}" cy="${bodyY-headR*1.12}" r="${headR*0.1}" fill="#000"/>
+    <!-- nose -->
+    <ellipse cx="${cx}" cy="${bodyY-headR*0.75}" rx="4" ry="3" fill="rgba(255,130,130,.8)"/>
+    <!-- mouth / smirk -->
+    <path d="M${cx-5} ${bodyY-headR*0.5} Q${cx} ${bodyY-headR*0.35} ${cx+5} ${bodyY-headR*0.5}" stroke="#ccc" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <!-- whiskers -->
+    <line x1="${cx-headR*1.1}" y1="${bodyY-headR*0.7}" x2="${cx-headR*0.5}" y2="${bodyY-headR*0.75}" stroke="rgba(255,255,255,.4)" stroke-width="1"/>
+    <line x1="${cx-headR*1.1}" y1="${bodyY-headR*0.55}" x2="${cx-headR*0.5}" y2="${bodyY-headR*0.65}" stroke="rgba(255,255,255,.4)" stroke-width="1"/>
+    <line x1="${cx+headR*1.1}" y1="${bodyY-headR*0.7}" x2="${cx+headR*0.5}" y2="${bodyY-headR*0.75}" stroke="rgba(255,255,255,.4)" stroke-width="1"/>
+    <line x1="${cx+headR*1.1}" y1="${bodyY-headR*0.55}" x2="${cx+headR*0.5}" y2="${bodyY-headR*0.65}" stroke="rgba(255,255,255,.4)" stroke-width="1"/>
+    ${level>=100?`<polygon points="${cx},${bodyY-headR*2.8} ${cx+8},${bodyY-headR*2.3} ${cx-8},${bodyY-headR*2.3}" fill="#ffd700" filter="url(#glow-rat)"/>
+    <polygon points="${cx+10},${bodyY-headR*2.6} ${cx+16},${bodyY-headR*2.1} ${cx+4},${bodyY-headR*2.1}" fill="#ffd700"/>
+    <polygon points="${cx-10},${bodyY-headR*2.6} ${cx-4},${bodyY-headR*2.1} ${cx-16},${bodyY-headR*2.1}" fill="#ffd700"/>`:''}
+    ${level>=50&&level<100?`<path d="M${cx-12},${bodyY-headR*2.5} Q${cx},${bodyY-headR*2.85} ${cx+12},${bodyY-headR*2.5}" stroke="#f0c020" stroke-width="3" fill="none" stroke-linecap="round" filter="url(#glow-rat)"/>`:''}
+  </svg>`;
+}
+
+// ============================================================
+// STATE HELPERS
+// ============================================================
+function saveState() { try{localStorage.setItem('gymlog_v2',JSON.stringify(state));}catch(e){} }
+function loadState() {
+  try {
+    const s = localStorage.getItem('gymlog_v2');
+    if(s) state = {...state,...JSON.parse(s)};
+  } catch(e){}
+}
+
+function calcLevel(xp) {
+  let lvl=1, title='Iniciante';
+  const thresholds=[
+    [100,'Iniciante+'],[250,'Aprendiz'],[450,'Aprendiz+'],[700,'Aprendiz'],
+    [1000,'Guerreiro'],[1500,'Guerreiro+'],[2000,'Guerreiro++'],[3000,'Veterano'],
+    [5000,'Gladiador'],[7500,'Gladiador+'],[10000,'Titã'],[15000,'Titã+'],
+    [25000,'Lenda'],[50000,'Lenda+'],[100000,'Titânico']
+  ];
+  for(let i=0;i<thresholds.length;i++){
+    if(xp>=thresholds[i][0]){lvl=i+2;title=thresholds[i][1];}
+    else break;
+  }
+  return {level:lvl,title};
+}
+
+function xpForNextLevel(xp) {
+  const thresholds=[100,250,450,700,1000,1500,2000,3000,5000,7500,10000,15000,25000,50000,100000,200000];
+  let prev=0;
+  for(let t of thresholds){
+    if(xp<t) return {cur:xp-prev, needed:t-prev, pct:((xp-prev)/(t-prev)*100).toFixed(1)};
+    prev=t;
+  }
+  return {cur:xp,needed:xp,pct:100};
+}
+
+function calcStreak() {
+  if(!state.workouts.length) return 0;
+  const days = new Set(state.workouts.map(w=>w.date));
+  const today = dateStr(new Date());
+  let streak=0, d=new Date();
+  while(true){
+    const ds=dateStr(d);
+    if(days.has(ds)) streak++;
+    else if(ds!==today) break;
+    d.setDate(d.getDate()-1);
+    if(streak>500) break;
+  }
+  return streak;
+}
+
+function calcBestStreak() {
+  if(!state.workouts.length) return 0;
+  const days = [...new Set(state.workouts.map(w=>w.date))].sort();
+  let best=0,cur=1;
+  for(let i=1;i<days.length;i++){
+    const a=new Date(days[i-1]),b=new Date(days[i]);
+    const diff=(b-a)/86400000;
+    if(diff===1) cur++;
+    else cur=1;
+    if(cur>best) best=cur;
+  }
+  return Math.max(best,1);
+}
+
+function getWeightLost() {
+  if(state.bodyWeights.length<2) return 0;
+  const first=state.bodyWeights[0].kg, last=state.bodyWeights[state.bodyWeights.length-1].kg;
+  return Math.max(0, first-last);
+}
+function getWeightGained() {
+  if(state.bodyWeights.length<2) return 0;
+  const first=state.bodyWeights[0].kg, last=state.bodyWeights[state.bodyWeights.length-1].kg;
+  return Math.max(0, last-first);
+}
+
+function dateStr(d) { return d.toISOString().split('T')[0]; }
+function formatDate(s) {
+  const d=new Date(s+'T12:00:00');
+  return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
+}
+
+function getRatbroMsg() {
+  const streak=calcStreak(), total=state.workouts.length;
+  const thisWeek=state.workouts.filter(w=>{
+    const d=new Date(w.date+'T12:00:00'), now=new Date();
+    return (now-d)<7*86400000;
+  }).length;
+  let pool = RATBRO_MSGS.default;
+  if(streak>=3) pool=[...pool,...RATBRO_MSGS.streak];
+  if(thisWeek<2&&total>5) pool=[...pool,...RATBRO_MSGS.few];
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+
+function addXP(amount, reason='') {
+  const oldLevel = calcLevel(state.xp).level;
+  state.xp += amount;
+  const newInfo = calcLevel(state.xp);
+  if(newInfo.level > oldLevel) showToast(`⬆️ NÍVEL ${newInfo.level}! ${newInfo.title}`, '🎉');
+  else showToast(`+${amount} XP${reason?' · '+reason:''}`, '⚡');
+  saveState(); updateAll();
+}
+
+// ============================================================
+// ACHIEVEMENTS CHECK
+// ============================================================
+function checkAchievements() {
+  let newUnlocked=[];
+  for(const ach of ACHIEVEMENTS){
+    if(state.achievements[ach.id]?.unlocked) continue;
+    const val = ach.getValue();
+    if(!state.achievements[ach.id]) state.achievements[ach.id]={unlocked:false,date:null,progress:0};
+    state.achievements[ach.id].progress = Math.min(val, ach.target);
+    if(val>=ach.target){
+      state.achievements[ach.id].unlocked=true;
+      state.achievements[ach.id].date=dateStr(new Date());
+      newUnlocked.push(ach);
+    }
+  }
+  if(newUnlocked.length){
+    saveState();
+    const ach=newUnlocked[0];
+    showUnlock(ach.icon, ach.name, ach.desc, ach.xp);
+    state.xp += ach.xp;
+    saveState();
+    setTimeout(()=>checkAchievements(),500);
+  }
+}
+
+function showUnlock(icon,title,sub,xp) {
+  document.getElementById('unlock-icon').textContent=icon;
+  document.getElementById('unlock-title').textContent=title;
+  document.getElementById('unlock-sub').textContent=sub;
+  document.getElementById('unlock-xp').textContent=`+${xp} XP`;
+  document.getElementById('unlock-overlay').classList.add('show');
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+let toastTimer;
+function showToast(msg, icon='⚡') {
+  clearTimeout(toastTimer);
+  document.getElementById('toast-text').textContent=msg;
+  document.getElementById('toast-icon').textContent=icon;
+  document.getElementById('toast').classList.add('show');
+  toastTimer=setTimeout(()=>document.getElementById('toast').classList.remove('show'),2500);
+}
+
+// ============================================================
+// ACTIONS
+// ============================================================
+function logWorkout() {
+  const type=document.getElementById('log-type').value;
+  const duration=parseInt(document.getElementById('log-duration').value)||45;
+  const weightVal=parseFloat(document.getElementById('log-weight').value);
+  const notes=document.getElementById('log-notes').value;
+  if(!type){showToast('Selecione o tipo de treino','⚠️');return;}
+  
+  const today=dateStr(new Date());
+  state.workouts.push({id:Date.now(),date:today,type,duration,weight:weightVal||null,notes});
+  if(weightVal) state.bodyWeights.push({date:today,kg:weightVal});
+  
+  // reset form
+  document.getElementById('log-type').value='';
+  document.getElementById('log-duration').value='';
+  document.getElementById('log-weight').value='';
+  document.getElementById('log-notes').value='';
+  
+  saveState();
+  checkAchievements();
+  addXP(50,'Treino registrado');
+  updateAll();
+  goToPage('home');
+}
+
+function saveRecord() {
+  const exercise=document.getElementById('rec-exercise').value;
+  const kg=parseFloat(document.getElementById('rec-kg').value);
+  if(!kg||kg<=0){showToast('Informe a carga','⚠️');return;}
+  
+  const prev=state.records[exercise]?.kg||0;
+  const isNew = kg>prev;
+  state.records[exercise]={kg,date:dateStr(new Date())};
+  document.getElementById('rec-kg').value='';
+  
+  saveState();
+  if(isNew && prev>0) {
+    showToast(`Novo recorde! ${exercise}: ${kg}kg 🏅`,'🏅');
+    addXP(75,'Novo recorde pessoal');
+  } else {
+    showToast(`Recorde salvo: ${kg}kg`,'💾');
+  }
+  checkAchievements();
+  updateAll();
+}
+
+function resetData() {
+  state={xp:0,level:1,workouts:[],records:{},bodyWeights:[],achievements:{}};
+  saveState(); updateAll();
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function updateAll() {
+  const info=calcLevel(state.xp);
+  const xpInfo=xpForNextLevel(state.xp);
+  const streak=calcStreak();
+  const total=state.workouts.length;
+  const achCount=Object.values(state.achievements).filter(a=>a.unlocked).length;
+
+  // topbar
+  document.getElementById('tb-level').textContent=`Nível ${info.level} · ${info.title}`;
+  document.getElementById('tb-xp-fill').style.width=xpInfo.pct+'%';
+
+  // home
+  document.getElementById('home-level').textContent=info.level;
+  document.getElementById('home-title').textContent=info.title;
+  document.getElementById('home-xp-cur').textContent=xpInfo.cur+' XP';
+  document.getElementById('home-xp-next').textContent=xpInfo.needed+' XP';
+  document.getElementById('home-xp-fill').style.width=xpInfo.pct+'%';
+  document.getElementById('home-streak').textContent=streak;
+  document.getElementById('home-total').textContent=total;
+
+  // ratbro message
+  document.getElementById('ratbro-msg').textContent=getRatbroMsg();
+
+  // next workout
+  const today=new Date(); today.setDate(today.getDate()+1);
+  document.getElementById('next-day-num').textContent=today.getDate();
+  document.getElementById('next-day-month').textContent=today.toLocaleDateString('pt-BR',{month:'short'}).toUpperCase();
+  document.getElementById('next-workout-name').textContent='Defina seu próximo treino';
+  document.getElementById('next-workout-type').textContent='Registre treinos para ver sugestões';
+
+  // last record
+  const recKeys=Object.keys(state.records);
+  if(recKeys.length){
+    document.getElementById('last-record-card').style.display='';
+    const last=recKeys[recKeys.length-1];
+    document.getElementById('last-record-content').innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:14px;font-weight:600">${last}</span>
+        <span class="record-kg">${state.records[last].kg}kg</span>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:4px">${formatDate(state.records[last].date)}</div>`;
+  }
+
+  // last achievement
+  const lastAch=ACHIEVEMENTS.filter(a=>state.achievements[a.id]?.unlocked)
+    .sort((a,b)=>new Date(state.achievements[b.id].date)-new Date(state.achievements[a.id].date))[0];
+  if(lastAch){
+    document.getElementById('last-ach-card').style.display='';
+    document.getElementById('last-ach-content').innerHTML=`
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:28px">${lastAch.icon}</span>
+        <div><div style="font-size:14px;font-weight:600">${lastAch.name}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${lastAch.desc}</div></div>
+      </div>`;
+  }
+
+  // calendar
+  renderCalendar();
+
+  // records list
+  renderRecords();
+
+  // achievements
+  renderAchievements();
+
+  // profile
+  document.getElementById('prof-level').textContent=info.level;
+  document.getElementById('prof-title').textContent=info.title;
+  document.getElementById('prof-xp-cur').textContent=xpInfo.cur+' XP';
+  document.getElementById('prof-xp-next').textContent=xpInfo.needed+' XP';
+  document.getElementById('prof-xp-fill').style.width=xpInfo.pct+'%';
+  document.getElementById('prof-total-xp').textContent=state.xp;
+  document.getElementById('prof-ach').textContent=achCount;
+  document.getElementById('prof-workouts').textContent=total;
+  document.getElementById('prof-streak').textContent=streak;
+
+  // ratbro evolution
+  const lvl=info.level;
+  let evoName='Ratbro Iniciante', nextEvo='';
+  if(lvl>=100) evoName='Ratbro Titânico';
+  else if(lvl>=50) {evoName='Ratbro Lendário'; nextEvo='Próxima evolução: nível 100';}
+  else if(lvl>=25) {evoName='Ratbro Musculoso'; nextEvo='Próxima evolução: nível 50';}
+  else if(lvl>=10) {evoName='Ratbro Atlético'; nextEvo='Próxima evolução: nível 25';}
+  else {nextEvo='Próxima evolução: nível 10';}
+  document.getElementById('ratbro-evo-name').textContent=evoName;
+  document.getElementById('ratbro-evo-next').textContent=nextEvo;
+
+  const ratSize=lvl;
+  document.getElementById('ratbro-profile').innerHTML=ratbroSVG(lvl,130);
+  document.getElementById('ratbro-home').innerHTML=ratbroSVG(lvl,80);
+
+  // hist count
+  document.getElementById('hist-count').textContent=total;
+  renderHistory();
+
+  // cal stats
+  document.getElementById('cal-streak').textContent=streak;
+  document.getElementById('cal-best').textContent=calcBestStreak();
+  const thisMonthStr=new Date().toISOString().slice(0,7);
+  document.getElementById('cal-month-count').textContent=state.workouts.filter(w=>w.date.startsWith(thisMonthStr)).length;
+  document.getElementById('cal-total-count').textContent=total;
+  document.getElementById('cal-total-days').textContent=total+' dias';
+  document.getElementById('ach-count').textContent=achCount+'/'+ACHIEVEMENTS.length;
+}
+
+function renderHistory() {
+  const el=document.getElementById('workout-history');
+  const workouts=[...state.workouts].reverse().slice(0,10);
+  if(!workouts.length){
+    el.innerHTML=`<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Sem treinos ainda.<br>Registre seu primeiro treino!</div></div>`;
+    return;
+  }
+  const icons={'Peito':'🏋️','Costas':'🔙','Pernas':'🦵','Ombros':'💪','Bíceps':'💪','Tríceps':'💪','Full Body':'⚡','Cardio':'🏃','Push':'📤','Pull':'📥','Legs':'🦵'};
+  el.innerHTML=workouts.map(w=>`
+    <div class="workout-item">
+      <div class="workout-icon">${icons[w.type]||'💪'}</div>
+      <div class="workout-info">
+        <div class="workout-name">${w.type}</div>
+        <div class="workout-meta">${formatDate(w.date)} · ${w.duration}min${w.weight?' · '+w.weight+'kg':''}</div>
+        ${w.notes?`<div class="workout-meta" style="margin-top:2px;font-style:italic">"${w.notes}"</div>`:''}
+      </div>
+    </div>`).join('');
+}
+
+function renderCalendar() {
+  const el=document.getElementById('cal-months');
+  const days=new Set(state.workouts.map(w=>w.date));
+  const today=new Date(); today.setHours(0,0,0,0);
+  
+  // build last 6 months
+  let html='';
+  const DAYS=['D','S','T','Q','Q','S','S'];
+  
+  for(let m=5;m>=0;m--){
+    const d=new Date(today);
+    d.setDate(1); d.setMonth(d.getMonth()-m);
+    const year=d.getFullYear(), month=d.getMonth();
+    const monthName=d.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+    const daysInMonth=new Date(year,month+1,0).getDate();
+    const firstDay=new Date(year,month,1).getDay();
+    
+    html+=`<div class="cal-month-header">${monthName.charAt(0).toUpperCase()+monthName.slice(1)}</div>`;
+    html+='<div class="cal-labels">'+DAYS.map(d=>`<div class="cal-label">${d}</div>`).join('')+'</div>';
+    html+='<div class="cal-grid">';
+    for(let i=0;i<firstDay;i++) html+='<div></div>';
+    for(let day=1;day<=daysInMonth;day++){
+      const ds=`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      const count=state.workouts.filter(w=>w.date===ds).length;
+      const isToday=ds===dateStr(today);
+      let lvlClass='';
+      if(count>=3) lvlClass='level-4';
+      else if(count===2) lvlClass='level-3';
+      else if(count===1) lvlClass='level-2';
+      html+=`<div class="cal-day ${lvlClass}${isToday?' today':''}" title="${ds}: ${count} treinos"></div>`;
+    }
+    html+='</div>';
+    if(m>0) html+='<div style="height:8px"></div>';
+  }
+  el.innerHTML=html;
+}
+
+function renderRecords() {
+  const el=document.getElementById('records-list');
+  const keys=Object.keys(state.records);
+  if(!keys.length){
+    el.innerHTML=`<div class="empty-state"><div class="empty-icon">🏅</div><div class="empty-text">Nenhum recorde ainda.<br>Registre sua primeira marca!</div></div>`;
+    return;
+  }
+  el.innerHTML=keys.map(ex=>`
+    <div class="record-item">
+      <div>
+        <div class="record-name">${ex}</div>
+        <div class="record-date">${formatDate(state.records[ex].date)}</div>
+      </div>
+      <div class="record-kg">${state.records[ex].kg}<span style="font-size:13px;color:var(--text-muted)">kg</span></div>
+    </div>`).join('');
+}
+
+function renderAchievements() {
+  const el=document.getElementById('achievements-list');
+  const cats=[...new Set(ACHIEVEMENTS.map(a=>a.cat))];
+  let html='';
+  for(const cat of cats){
+    html+=`<div class="ach-cat-title">${cat}</div><div class="ach-grid">`;
+    for(const ach of ACHIEVEMENTS.filter(a=>a.cat===cat)){
+      const info=state.achievements[ach.id]||{unlocked:false,progress:0,date:null};
+      const prog=Math.min(info.progress||0,ach.target);
+      const pct=(prog/ach.target*100).toFixed(0);
+      html+=`<div class="ach-card ${info.unlocked?'unlocked':'locked'}">
+        <div class="ach-icon">${ach.icon}</div>
+        <div class="ach-name">${ach.name}</div>
+        <div class="ach-desc">${ach.desc}</div>
+        ${info.unlocked?`<div class="ach-date">✓ ${formatDate(info.date)}</div>`:`
+        <div class="ach-prog">
+          <div class="ach-prog-bar"><div class="ach-prog-fill" style="width:${pct}%"></div></div>
+          <div class="ach-prog-label">${prog}/${ach.target}</div>
+        </div>`}
+      </div>`;
+    }
+    html+='</div>';
+  }
+  el.innerHTML=html;
+}
+
+// ============================================================
+// NAV
+// ============================================================
+function goToPage(page) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.getElementById('nav-'+page).classList.add('active');
+  // Add animation
+  document.getElementById('page-'+page).classList.remove('anim-fadein');
+  void document.getElementById('page-'+page).offsetWidth;
+  document.getElementById('page-'+page).classList.add('anim-fadein');
+}
+
+// ============================================================
+// INIT
+// ============================================================
+loadState();
+checkAchievements();
+updateAll();
+</script>
+</body>
+</html>
